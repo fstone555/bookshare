@@ -1,4 +1,3 @@
-// models/Book.js
 const mongoose = require('mongoose');
 
 const bookSchema = new mongoose.Schema({
@@ -13,13 +12,12 @@ const bookSchema = new mongoose.Schema({
   status: { type: String, default: 'active' }
 }, { timestamps: true });
 
-// Virtual field สำหรับภาพแรก
+// Virtual field สำหรับ image URL
 bookSchema.virtual('image_url').get(function() {
   return this.images && this.images.length > 0 ? this.images[0] : null;
 });
 
-// ให้ virtual field แสดงเมื่อแปลงเป็น JSON / Object
 bookSchema.set('toJSON', { virtuals: true });
 bookSchema.set('toObject', { virtuals: true });
 
-module.exports = mongoose.model('Book', bookSchema);
+module.exports = mongoose.models.Book || mongoose.model('Book', bookSchema);
