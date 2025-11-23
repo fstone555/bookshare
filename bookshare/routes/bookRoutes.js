@@ -1,8 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const bookController = require('../controllers/bookController');
+const { authMiddleware } = require('../middleware/authMiddleware');
 const sellerBookController = require('../controllers/sellerBookController');
-const { authMiddleware, authorizeRoles } = require('../middleware/authMiddleware');
 const multer = require('multer');
 const path = require('path');
 
@@ -13,68 +13,28 @@ const storage = multer.diskStorage({
     cb(null, uniqueSuffix + path.extname(file.originalname));
   }
 });
+
 const upload = multer({ storage });
 
-/* --------------------------
-   Seller routes
--------------------------- */
-router.get(
-  '/seller',
-  authMiddleware,
-  authorizeRoles('seller'),
-  sellerBookController.getSellerBooks
-);
+// สร้างหนังสือ
+router.post('/', authMiddleware, upload.array('images'), bookController.create);
 
-router.post(
-  '/seller',
-  authMiddleware,
-  authorizeRoles('seller'),
-  upload.array('images'),
-  sellerBookController.createBook
-);
+// ดึงหนังสือทั้งหมด (ต้องอยู่ก่อน /:id)
+router.get('/all', bookController.listAll);
 
-router.patch(
-  '/seller/:id',
-  authMiddleware,
-  authorizeRoles('seller'),
-  upload.array('images'),
-  sellerBookController.updateBook
-);
-
-router.delete(
-  '/seller/:id',
-  authMiddleware,
-  authorizeRoles('seller'),
-  sellerBookController.deleteBook
-);
-
-/* --------------------------
-   Public routes
--------------------------- */
+// ดึงรายการหนังสือ (รองรับ sellerId query)
 router.get('/', bookController.list);
+
+// ดึงหนังสือเดียว
 router.get('/:id', bookController.get);
 
-router.post(
-  '/',
-  authMiddleware,
-  upload.array('images'),
-  bookController.create
-);
+// อัปเดตหนังสือ
+router.put('/:id', authMiddleware, upload.array('images'), bookController.update);
 
-router.put(
-  '/:id',
-  authMiddleware,
-  upload.array('images'),
-  bookController.update
-);
+// ลบหนังสือ
+router.delete('/:id', authMiddleware, bookController.remove);
 
-// ❌ ลบบรรทัดนี้หากคุณมีอยู่
-// router.patch('/:id', bookController.update); ← ทำให้ error
-
-router.delete(
-  '/:id',
-  authMiddleware,
-  bookController.remove
-);
+// ดึงของ seller เอง
+router.get('/seller', authMiddleware, sellerBookController.getSellerBooks);
 
 module.exports = router;

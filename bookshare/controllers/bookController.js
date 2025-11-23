@@ -87,3 +87,21 @@ exports.remove = async (req, res) => {
     res.status(500).json({ message: 'Delete book error', error: err.message });
   }
 };
+
+exports.listAll = async (req, res) => {
+  try {
+    const books = await Book.find().populate('categoryId', 'name').lean();
+    const host = req.protocol + '://' + req.get('host');
+
+    const booksWithImages = books.map(book => ({
+      ...book,
+      images: book.images.map(img => `${host}/uploads/${img}`)
+    }));
+
+    res.json(booksWithImages);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'List all books error', error: err.message });
+  }
+};
+

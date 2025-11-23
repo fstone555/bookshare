@@ -1,25 +1,24 @@
-// models/Book.js
 const mongoose = require('mongoose');
+const bcrypt = require('bcrypt');
 
-const bookSchema = new mongoose.Schema({
-  title: { type: String, required: true },
-  author: { type: String, required: true },
-  price: { type: Number, default: 0 },
-  condition: { type: String, enum: ['new', 'used'], default: 'used' },
-  categoryId: { type: mongoose.Schema.Types.ObjectId, ref: 'Category', default: null },
-  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-  shortDescription: { type: String, default: '' },
-  images: [String],
-  status: { type: String, default: 'active' }
+const userSchema = new mongoose.Schema({
+  name: { type: String, required: true, trim: true },
+  email: { type: String, required: true, unique: true, lowercase: true },
+  password: { type: String, required: true },
+  role: { type: String, enum: ['buyer', 'seller', 'admin'], default: 'buyer' },
+  avatar: { type: String }
 }, { timestamps: true });
 
-// Virtual field สำหรับภาพแรก
-bookSchema.virtual('image_url').get(function() {
-  return this.images && this.images.length > 0 ? this.images[0] : null;
+// Hash password ก่อน save
+userSchema.pre('save', async function(next) {
+  if (!this.isModified('password')) return next();
+  this.password = await bcrypt.hash(this.password, 10);
+  next();
 });
 
-// ให้ virtual field แสดงเมื่อแปลงเป็น JSON / Object
-bookSchema.set('toJSON', { virtuals: true });
-bookSchema.set('toObject', { virtuals: true });
+// Method สำหรับ compare password
+userSchema.methods.comparePassword = async function(candidatePassword) {
+  return bcrypt.compare(candidatePassword, this.password);
+};
 
-module.exports = mongoose.model('Book', bookSchema);
+module.exports = mongoose.model('User', userSchema);
